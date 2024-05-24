@@ -77,7 +77,8 @@ app.post("/process", async function (req: Request, res: Response) {
       let url = new URL(`https://${hostname}`);
       await fetch(url, {
         //signal: AbortSignal.timeout(2000),
-        agent: httpsAgent
+        agent: httpsAgent,
+        redirect: 'follow'
       }).then(async (response: any) => {
         const data = await response.text();
         let whoisData = await simpleWhois.getWhois(hostname, { deepWhois: false });
