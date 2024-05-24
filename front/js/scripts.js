@@ -13,8 +13,8 @@ document.getElementById('submitButton').addEventListener('click', function () {
     return;
   }
   document.getElementById('loading-spinner').style.display = 'flex';
-  //fetch('/api/process', {
-  fetch('http://localhost:3000/process', {
+  fetch('/api/process', {
+    //fetch('http://localhost:3000/process', {
     method: "POST",
     mode: "cors",
     headers: {
