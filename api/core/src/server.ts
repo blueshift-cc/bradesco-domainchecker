@@ -12,7 +12,7 @@ const httpsAgent = new https.Agent({
 });
 
 //const allowedOrigins = ['http://localhost:3000', 'http://localhost:80', 'https://gadetector.bohr.io', 'https://gadetector.blueshift.cc'];
-const allowedOrigins = ['http://localhost:3000', 'http://localhost', 'http://localhost:81', 'https://gadetector.bohr.io', 'https://gadetector.blueshift.cc'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost', 'http://localhost:81', 'https://domainchecker.blueshift.cc'];
 
 const options: cors.CorsOptions = {
   origin: allowedOrigins
