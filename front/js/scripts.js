@@ -32,7 +32,7 @@ document.getElementById('submitButton').addEventListener('click', function () {
         var status200 = 0;
         data.forEach((itemData) => {
 
-          let whoisContent = itemData.whois.replace(/\r\n/g, '<br/>').replace(/\'/g, "\\\'");
+          let whoisContent = itemData.whois.replace(/\r\n/g, '<br/>').replace(/\n/g, '<br/>').replace(/\'/g, "\\\'");
 
           console.log(whoisContent);
 
