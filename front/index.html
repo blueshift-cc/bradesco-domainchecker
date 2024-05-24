@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>GA Version Detector</title>
+    <title>Domain Checker</title>
     <!-- Favicon-->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
     <!-- Core theme CSS (includes Bootstrap)-->
@@ -20,7 +20,7 @@
     <!-- Responsive navbar-->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">GA Version Detector</a>
+            <a class="navbar-brand" href="#">Domain Checker</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
@@ -51,9 +51,9 @@
             <table id="results-table" class="table table-striped mb-5" style="width:100%">
                 <thead>
                     <tr>
-                        <th>URL</th>
-                        <th>Versão</th>
-                        <th>Tag's</th>
+                        <th>Domínio</th>
+                        <th>Status</th>
+                        <th>Whois</th>
                     </tr>
                 </thead>
                 <tbody id="tableData">
@@ -61,13 +61,30 @@
                 <tfoot>
                     <tr>
                         <th></th>
-                        <th>Versão</th>
+                        <th>Status</th>
                         <th></th>
                     </tr>
                 </tfoot>
             </table>
         </div>
     </div>
+    <div class="modal fade" id="whoisModal" tabindex="-1" aria-labelledby="whoisModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Whois</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="whois-data"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap core JS-->
     <script src="js/bootstrap.bundle.min.js"></script>
     <!-- Core theme JS-->

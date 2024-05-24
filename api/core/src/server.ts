@@ -2,6 +2,14 @@ import express, { Response, Request } from "express";
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import fetch from "node-fetch";
+import psl from 'psl';
+//import 'simple-whois' from 'simple-whois';
+const simpleWhois = require('simple-whois');
+const https = require('https');
+
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 //const allowedOrigins = ['http://localhost:3000', 'http://localhost:80', 'https://gadetector.bohr.io', 'https://gadetector.blueshift.cc'];
 const allowedOrigins = ['http://localhost:3000', 'http://localhost', 'http://localhost:81', 'https://gadetector.bohr.io', 'https://gadetector.blueshift.cc'];
@@ -15,89 +23,36 @@ app.use(cors(options));
 app.use(bodyParser.json({ limit: "100mb" }))
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }))
 
-function isValidHttpUrl(string: any) {
-  let url;
-
+const validateDomain = (s: string) => {
   try {
-    url = new URL(string);
-  } catch (_) {
+    new URL("https://" + s);
+    return true;
+  }
+  catch (e) {
+    console.error(e);
     return false;
   }
+};
 
-  return url.protocol === "http:" || url.protocol === "https:";
-}
+function extractHostname(url: any) {
+  var hostname;
+  //find & remove protocol (http, ftp, etc.) and get hostname
 
-async function isGA3UA(data: any) {
-  const regexTag = /(['"]UA-[a-zA-Z0-9-]*['"])/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
+  if (url.indexOf("//") > -1) {
+    hostname = url.split('/')[2];
+  } else {
+    hostname = url.split('/')[0];
   }
-  return null;
+
+  //find & remove port number
+  hostname = hostname.split(':')[0];
+  //find & remove "?"
+  hostname = hostname.split('?')[0];
+
+  validateDomain(hostname);
+  return hostname;
 }
 
-async function isGA3GTM(data: any) {
-  const regexTag = /([=]GTM-[a-zA-Z0-9-]*['"])/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
-  }
-  return null;
-}
-
-async function isGA4(data: any) {
-  const regexTag = /(['"]GTM-[a-zA-Z0-9]*['"])/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
-  }
-  return null;
-}
-
-async function isGlobalJS(data: any) {
-  const regexTag = /GlobalJS.js/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
-  }
-  return null;
-}
-
-async function isScriptBI(data: any) {
-  const regexTag = /script_bi.js/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
-  }
-  return null;
-}
-
-async function isRedirect(data: any) {
-  const regexTag = /Redirecionando,/gm;
-  let m;
-
-  const tag = data.match(regexTag);
-
-  if (tag?.length > 0) {
-    return tag[0];
-  }
-  return null;
-}
 
 app.get("/", function (req: Request, res: Response) {
   res.send("Hello world");
@@ -108,78 +63,30 @@ app.post("/process", async function (req: Request, res: Response) {
   var responseData: any = [];
 
   try {
-    const urTextArea: String = req.body?.urlTextArea;
+    const urlTextArea: String = req.body?.urlTextArea;
 
-    const urls: string[] = urTextArea.split(/[;\n ]/);
+    const urls: string[] = urlTextArea.split(/[;\n ]/);
 
     const urlsDeDuplicated = [...new Set(urls)];
 
     for (let i = 0; i < urlsDeDuplicated.length; i++) {
 
-      if (!isValidHttpUrl(urlsDeDuplicated[i])) {
-        continue;
-      }
-      await fetch(urlsDeDuplicated[i]).then(async (response: any) => {
+      let hostname: any = psl.get(extractHostname(urlsDeDuplicated[i]));
+
+      //let url = new URL(hostname);
+      let url = new URL(`https://${hostname}`);
+      await fetch(url, {
+        //signal: AbortSignal.timeout(2000),
+        agent: httpsAgent
+      }).then(async (response: any) => {
         const data = await response.text();
-        const is_ga3 = await isGA3UA(data);
-        const is_ga3gtm = await isGA3GTM(data);
-        const is_ga4 = await isGA4(data);
-        const is_globaljs = await isGlobalJS(data);
-        const is_globalBI = await isScriptBI(data);
-        const is_redirect = await isRedirect(data);
+        let whoisData = await simpleWhois.getWhois(hostname, { deepWhois: false });
+        console.log(whoisData);
+        responseData.push({ "domain": hostname, "status": response.status, whois: whoisData });
 
-        if ((is_ga3 != null || is_ga3gtm != null) && is_ga4 == null) {
-          let tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1)].filter(n => n))];
-
-          if (is_globaljs != null) {
-            tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1), "GTM-T9F3WZN"].filter(n => n))];
-          }
-          if (is_globalBI != null) {
-            tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1), "GTM-P5GGXJ8"].filter(n => n))];
-          }
-
-          const tag_ver = tags_.toString().indexOf('UA-') > -1 && tags_.length > 1 ? "3, 4" : tags_.length > 1 ? "4, 4" : "4";
-
-          responseData.push({ "url": urlsDeDuplicated[i], "version": tag_ver, tag: tags_.toString(), globalJS: is_globaljs, globalBI: is_globalBI });
-        }
-        else if ((is_ga3 != null || is_ga3gtm != null) && is_ga4 != null) {
-          let tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1), is_ga4?.slice(1, -1)].filter(n => n))];
-
-          if (is_globaljs != null) {
-            tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1), is_ga4?.slice(1, -1), "GTM-T9F3WZN"].filter(n => n))];
-          }
-          if (is_globalBI != null) {
-            tags_ = [...new Set([is_ga3?.slice(1, -1), is_ga3gtm?.slice(1, -1), is_ga4?.slice(1, -1), "GTM-P5GGXJ8"].filter(n => n))];
-          }
-
-          const tag_ver = tags_.toString().indexOf('UA-') > -1 && tags_.length > 1 ? "3, 4" : tags_.length > 1 ? "4, 4" : "4";
-
-          responseData.push({ "url": urlsDeDuplicated[i], "version": tag_ver, tag: tags_.toString(), globalJS: is_globaljs, globalBI: is_globalBI });
-        }
-        else {
-          if (is_ga3 != null) {
-            responseData.push({ "url": urlsDeDuplicated[i], "version": 3, tag: is_ga3.slice(1, -1), globalJS: is_globaljs, globalBI: is_globalBI });
-          }
-          else if (is_ga3gtm != null) {
-            responseData.push({ "url": urlsDeDuplicated[i], "version": 4, tag: is_ga3gtm.slice(1, -1), globalJS: is_globaljs, globalBI: is_globalBI });
-          }
-          else if (is_ga4 != null) {
-            responseData.push({ "url": urlsDeDuplicated[i], "version": 4, tag: is_ga4.slice(1, -1), globalJS: is_globaljs, globalBI: is_globalBI });
-          }
-          else if (is_globaljs != null) {
-            responseData.push({ "url": urlsDeDuplicated[i], "version": 4, tag: "GTM-T9F3WZN", globalJS: is_globaljs, globalBI: is_globalBI });
-          }
-        }
-
-        if (is_redirect != null) {
-          responseData.push({ "url": urlsDeDuplicated[i], "version": 0, tag: 'redirect', globalJS: is_globaljs, globalBI: is_globalBI });
-        }
-        else if (is_ga3 == null && is_ga3gtm == null && is_ga4 == null && is_globaljs == null) {
-          responseData.push({ "url": urlsDeDuplicated[i], "version": 0, tag: 'sem_tag', globalJS: is_globaljs, globalBI: is_globalBI });
-        }
       }).catch((e: any) => {
         console.log(e);
-        responseData.push({ "url": urlsDeDuplicated[i], "version": 0, tag: 'offline', globalJS: 'offline' });
+        responseData.push({ "domain": hostname, "status": '-', whois: '-' });
       });
     }
     res.json(responseData);

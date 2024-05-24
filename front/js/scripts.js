@@ -1,3 +1,6 @@
+function replaceModalContent(data) {
+  document.getElementById("whois-data").innerHTML = data;
+}
 document.getElementById('submitButton').addEventListener('click', function () {
   let urlTextArea = document.getElementById('urlTextArea').value;
   document.getElementById('resultsDiv').style.display = 'none';
@@ -10,7 +13,8 @@ document.getElementById('submitButton').addEventListener('click', function () {
     return;
   }
   document.getElementById('loading-spinner').style.display = 'flex';
-  fetch('/api/process', {
+  //fetch('/api/process', {
+  fetch('http://localhost:3000/process', {
     method: "POST",
     mode: "cors",
     headers: {
@@ -25,41 +29,20 @@ document.getElementById('submitButton').addEventListener('click', function () {
         let table = new DataTable('#results-table');
         table.destroy();
         var temp = "";
-        var ga3count = 0;
-        var ga4count = 0;
-        var ga34count = 0;
-        var offlinecount = 0;
-        var ganonecount = 0;
-        var redirect = 0;
+        var status200 = 0;
         data.forEach((itemData) => {
-          temp += "<tr>";
-          temp += "<td>" + itemData.url + "</td>";
-          temp += "<td>" + itemData.version + "</td>";
-          temp += "<td>" + itemData.tag + "</td></tr>";
 
-          if (itemData.version == 3) {
-            ga3count++;
-          }
-          else if (itemData.version == 4) {
-            ga4count++;
-          }
-          else if (itemData.version === "3, 4") {
-            ga34count++;
-          }
-          else if (itemData.version === "4, 4") {
-            ga4count++;
-          }
-          else if (itemData.tag == "offline") {
-            offlinecount++;
-          }
-          else if (itemData.tag == "sem_tag") {
-            ganonecount++;
-          }
-          else if (itemData.tag == "sem_tag") {
-            offlinecount++;
-          }
-          else if (itemData.tag == "redirect") {
-            redirect++;
+          let whoisContent = itemData.whois.replace(/\r\n/g, '<br/>').replace(/\'/g, "\\\'");
+
+          console.log(whoisContent);
+
+          temp += "<tr>";
+          temp += "<td>" + itemData.domain + "</td>";
+          temp += "<td>" + itemData.status + "</td>";
+          temp += `<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#whoisModal" onclick="replaceModalContent('${whoisContent}')" >WHOIS</button></td>`;
+
+          if (itemData.status == 200) {
+            status200++;
           }
         });
         document.getElementById('tableData').innerHTML = temp;
@@ -68,46 +51,49 @@ document.getElementById('submitButton').addEventListener('click', function () {
 
         table = new DataTable('#results-table', {
           paging: true,
-          pageLength: 50,
-          lengthMenu: [
-            [10, 25, 50, -1],
-            [10, 25, 50, 'All']
-          ],
-          layout: {
-            topStart: {
-              buttons: ['pageLength', 'copy', 'csv', 'excel', 'pdf', 'print']
-            }
-          },
-          initComplete: function () {
-            this.api()
-              .columns()
-              .every(function () {
-                let column = this;
-
-                // Create select element
-                let select = document.createElement('select');
-                select.style.width = "100%";
-                select.add(new Option(''));
-                column.footer().replaceChildren(select);
-
-                // Apply listener for user change in value
-                select.addEventListener('change', function () {
-                  column
-                    .search(select.value, { exact: true })
-                    .draw();
-                });
-
-                // Add list of options
-                column
-                  .data()
-                  .unique()
-                  .sort()
-                  .each(function (d, j) {
-                    select.add(new Option(d));
-                  });
-              });
-          }
         });
+        // table = new DataTable('#results-table', {
+        //   paging: true,
+        //   pageLength: 50,
+        //   lengthMenu: [
+        //     [10, 25, 50, -1],
+        //     [10, 25, 50, 'All']
+        //   ],
+        //   layout: {
+        //     topStart: {
+        //       buttons: ['pageLength', 'copy', 'csv', 'excel', 'pdf', 'print']
+        //     }
+        //   },
+        //   initComplete: function () {
+        //     this.api()
+        //       .columns()
+        //       .every(function () {
+        //         let column = this;
+
+        //         // Create select element
+        //         let select = document.createElement('select');
+        //         select.style.width = "100%";
+        //         select.add(new Option(''));
+        //         column.footer().replaceChildren(select);
+
+        //         // Apply listener for user change in value
+        //         select.addEventListener('change', function () {
+        //           column
+        //             .search(select.value, { exact: true })
+        //             .draw();
+        //         });
+
+        //         // Add list of options
+        //         column
+        //           .data()
+        //           .unique()
+        //           .sort()
+        //           .each(function (d, j) {
+        //             select.add(new Option(d));
+        //           });
+        //       });
+        //   }
+        // });
 
         if (window.doughnutChart !== undefined)
           window.doughnutChart.destroy();
@@ -117,11 +103,11 @@ document.getElementById('submitButton').addEventListener('click', function () {
         let chartConfig = {
           type: 'doughnut',
           data: {
-            labels: ["GA3", "GA4", "GA3/GA4", "NÃO TEM GA", "OFFLINE", "REDIRECT"],
+            labels: ["200"],
             datasets: [{
-              label: "Versão do Google Analytics",
-              data: [ga3count, ga4count, ga34count, ganonecount, offlinecount, redirect],
-              backgroundColor: ['yellow', 'green', 'blue', 'red', 'gray', 'cyan'],
+              label: "Códigos de resposta",
+              data: [status200],
+              backgroundColor: ['blue'],
               hoverOffset: 5
             }],
           },
