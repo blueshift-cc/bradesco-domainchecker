@@ -30,6 +30,7 @@ document.getElementById('submitButton').addEventListener('click', function () {
         table.destroy();
         var temp = "";
         var status200 = 0;
+        var status503 = 0;
         data.forEach((itemData) => {
           let whoisContent = itemData.whois.replace(/\r\n/g, '<br/>').replace(/\n/g, '<br/>').replace(/\'/g, "\\\'");
           temp += "<tr>";
@@ -40,6 +41,9 @@ document.getElementById('submitButton').addEventListener('click', function () {
           if (itemData.status == 200) {
             status200++;
           }
+          if (itemData.status == 503) {
+            status503++;
+          }
         });
         document.getElementById('tableData').innerHTML = temp;
         document.getElementById('loading-spinner').style.display = 'none';
@@ -47,49 +51,46 @@ document.getElementById('submitButton').addEventListener('click', function () {
 
         table = new DataTable('#results-table', {
           paging: true,
+          pageLength: 50,
+          lengthMenu: [
+            [10, 25, 50, -1],
+            [10, 25, 50, 'All']
+          ],
+          layout: {
+            topStart: {
+              buttons: ['pageLength', 'copy', 'csv', 'excel', 'pdf', 'print']
+            }
+          },
+          initComplete: function () {
+            this.api()
+              .columns()
+              .every(function () {
+                let column = this;
+
+                // Create select element
+                let select = document.createElement('select');
+                select.style.width = "100%";
+                select.add(new Option(''));
+                column.footer().replaceChildren(select);
+
+                // Apply listener for user change in value
+                select.addEventListener('change', function () {
+                  column
+                    .search(select.value, { exact: true })
+                    .draw();
+                });
+
+                // Add list of options
+                column
+                  .data()
+                  .unique()
+                  .sort()
+                  .each(function (d, j) {
+                    select.add(new Option(d));
+                  });
+              });
+          }
         });
-        // table = new DataTable('#results-table', {
-        //   paging: true,
-        //   pageLength: 50,
-        //   lengthMenu: [
-        //     [10, 25, 50, -1],
-        //     [10, 25, 50, 'All']
-        //   ],
-        //   layout: {
-        //     topStart: {
-        //       buttons: ['pageLength', 'copy', 'csv', 'excel', 'pdf', 'print']
-        //     }
-        //   },
-        //   initComplete: function () {
-        //     this.api()
-        //       .columns()
-        //       .every(function () {
-        //         let column = this;
-
-        //         // Create select element
-        //         let select = document.createElement('select');
-        //         select.style.width = "100%";
-        //         select.add(new Option(''));
-        //         column.footer().replaceChildren(select);
-
-        //         // Apply listener for user change in value
-        //         select.addEventListener('change', function () {
-        //           column
-        //             .search(select.value, { exact: true })
-        //             .draw();
-        //         });
-
-        //         // Add list of options
-        //         column
-        //           .data()
-        //           .unique()
-        //           .sort()
-        //           .each(function (d, j) {
-        //             select.add(new Option(d));
-        //           });
-        //       });
-        //   }
-        // });
 
         if (window.doughnutChart !== undefined)
           window.doughnutChart.destroy();
@@ -99,11 +100,11 @@ document.getElementById('submitButton').addEventListener('click', function () {
         let chartConfig = {
           type: 'doughnut',
           data: {
-            labels: ["200"],
+            labels: ["200", "503"],
             datasets: [{
               label: "Códigos de resposta",
-              data: [status200],
-              backgroundColor: ['blue'],
+              data: [status200, status503],
+              backgroundColor: ['blue', 'red'],
               hoverOffset: 5
             }],
           },
