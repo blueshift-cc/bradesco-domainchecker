@@ -20,8 +20,10 @@ const options: cors.CorsOptions = {
 
 var app = express();
 app.use(cors(options));
-app.use(bodyParser.json({ limit: "100mb" }))
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }))
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+
+app.use(express.static('../../front'));
 
 const validateDomain = (s: string) => {
   try {
@@ -54,9 +56,9 @@ function extractHostname(url: any) {
 }
 
 
-app.get("/", function (req: Request, res: Response) {
-  res.send("Hello world");
-});
+// app.get("/", function (req: Request, res: Response) {
+//   res.send("Hello world");
+// });
 
 app.post("/process", async function (req: Request, res: Response) {
 
