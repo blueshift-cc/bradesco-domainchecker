@@ -31,11 +31,7 @@ document.getElementById('submitButton').addEventListener('click', function () {
         var temp = "";
         var status200 = 0;
         data.forEach((itemData) => {
-
           let whoisContent = itemData.whois.replace(/\r\n/g, '<br/>').replace(/\n/g, '<br/>').replace(/\'/g, "\\\'");
-
-          console.log(whoisContent);
-
           temp += "<tr>";
           temp += "<td>" + itemData.domain + "</td>";
           temp += "<td>" + itemData.status + "</td>";
