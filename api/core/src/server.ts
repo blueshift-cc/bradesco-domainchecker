@@ -88,7 +88,7 @@ app.post("/process", async function (req: Request, res: Response) {
         responseData.push({ "domain": hostname, "active": 1, "status": response.status, whois: whoisData });
       }).catch((e: any) => {
         console.log(e);
-        responseData.push({ "domain": hostname, "active": 0, "status": '-', whois: '-' });
+        responseData.push({ "domain": hostname, "active": 0, "status": 'Timeout', whois: '-' });
       });
     }
     res.json(responseData);
