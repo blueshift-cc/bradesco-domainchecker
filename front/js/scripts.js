@@ -75,25 +75,19 @@ document.getElementById('submitButton').addEventListener('click', function () {
                 {
                   extend: 'copyHtml5',
                   exportOptions: {
-                    columns: [0, 1]
+                    columns: [0, 1, 2]
                   }
                 },
                 {
                   extend: 'csvHtml5',
                   exportOptions: {
-                    columns: [0, 1]
+                    columns: [0, 1, 2]
                   }
                 },
                 {
                   extend: 'excelHtml5',
                   exportOptions: {
-                    columns: [0, 1]
-                  }
-                },
-                {
-                  extend: 'pdfHtml5',
-                  exportOptions: {
-                    columns: [0, 1]
+                    columns: [0, 1, 2]
                   }
                 },
                 'print'
