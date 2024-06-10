@@ -70,26 +70,25 @@ app.post("/process", async function (req: Request, res: Response) {
     const urls: string[] = urlTextArea.split(/[;\n ]/);
 
     const urlsDeDuplicated = [...new Set(urls)];
+    let hostname: any = "";
 
     for (let i = 0; i < urlsDeDuplicated.length; i++) {
+      hostname = psl.get(extractHostname(urlsDeDuplicated[i]));
 
-      let hostname: any = psl.get(extractHostname(urlsDeDuplicated[i]));
+      if (hostname == null) continue;
 
       //let url = new URL(hostname);
-      let url = new URL(`https://${hostname}`);
+      let url = new URL(`http://${hostname}`);
       await fetch(url, {
         //signal: AbortSignal.timeout(2000),
-        agent: httpsAgent,
+        //agent: httpsAgent,
         redirect: 'follow'
       }).then(async (response: any) => {
-        const data = await response.text();
         let whoisData = await simpleWhois.getWhois(hostname, { deepWhois: false });
-        console.log(whoisData);
-        responseData.push({ "domain": hostname, "status": response.status, whois: whoisData });
-
+        responseData.push({ "domain": hostname, "active": 1, "status": response.status, whois: whoisData });
       }).catch((e: any) => {
         console.log(e);
-        responseData.push({ "domain": hostname, "status": '-', whois: '-' });
+        responseData.push({ "domain": hostname, "active": 0, "status": '-', whois: '-' });
       });
     }
     res.json(responseData);
