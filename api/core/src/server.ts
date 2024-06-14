@@ -84,8 +84,7 @@ app.post("/process", async function (req: Request, res: Response) {
         //agent: httpsAgent,
         redirect: 'follow'
       }).then(async (response: any) => {
-        let whoisData = await simpleWhois.getWhois(hostname, { deepWhois: false });
-        responseData.push({ "domain": hostname, "active": 1, "status": response.status, whois: whoisData });
+        responseData.push({ "domain": hostname, "active": 1, "status": response.status });
       }).catch((e: any) => {
         console.log(e);
         responseData.push({ "domain": hostname, "active": 0, "status": 'Timeout', whois: '-' });
@@ -94,6 +93,25 @@ app.post("/process", async function (req: Request, res: Response) {
     res.json(responseData);
   }
   catch (e) {
+    console.log(e);
+    res.status(500);
+    res.send(JSON.stringify(e));
+    return;
+  }
+});
+
+app.post("/whois", async function (req: Request, res: Response) {
+
+  var responseData: any = [];
+
+  try {
+    const domain: String = req.body?.domain;
+
+    let whoisData = await simpleWhois.getWhois(domain, { deepWhois: false });
+    res.json(whoisData);
+  }
+  catch (e) {
+    console.log(e);
     res.status(500);
     res.send(JSON.stringify(e));
     return;

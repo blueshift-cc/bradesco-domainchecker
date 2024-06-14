@@ -1,7 +1,42 @@
 var modalData = [];
 
+function plain2html(text) {
+  text = (text || "");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\t/g, "    ")
+    .replace(/ /g, "&#8203;&nbsp;&#8203;")
+    .replace(/\r\n|\r|\n/g, "<br />")
+    .replace(/\'/g, "\\\'")
+    .replace(/\"/g, "\\\"")
+    .replace(/\(/g, "\\\(")
+    .replace(/\)/g, "\\\)");
+}
+
 function replaceModalContent(data) {
-  document.getElementById("whois-data").innerHTML = modalData[data];
+
+  document.getElementById("whois-data").innerHTML = "processando...";
+  fetch('/whois', {
+    //fetch('http://localhost:3000/process', {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ domain: data })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.length > 0) {
+        document.getElementById("whois-data").innerHTML = plain2html(data);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
 }
 document.getElementById('submitButton').addEventListener('click', function () {
   let urlTextArea = document.getElementById('urlTextArea').value;
@@ -15,20 +50,7 @@ document.getElementById('submitButton').addEventListener('click', function () {
     return;
   }
 
-  function plain2html(text) {
-    text = (text || "");
-    return text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\t/g, "    ")
-      .replace(/ /g, "&#8203;&nbsp;&#8203;")
-      .replace(/\r\n|\r|\n/g, "<br />")
-      .replace(/\'/g, "\\\'")
-      .replace(/\"/g, "\\\"")
-      .replace(/\(/g, "\\\(")
-      .replace(/\)/g, "\\\)");
-  }
+
 
   document.getElementById('loading-spinner').style.display = 'flex';
   fetch('/process', {
@@ -49,9 +71,6 @@ document.getElementById('submitButton').addEventListener('click', function () {
         var temp = "";
 
         data.forEach((itemData) => {
-          let whoisContent = plain2html(itemData.whois);
-
-          modalData[itemData.domain] = whoisContent;
           temp += "<tr>";
           temp += "<td>" + itemData.domain + "</td>";
           temp += "<td>" + (itemData.active == 1 ? "Sim" : "Não") + "</td>";
